@@ -4,7 +4,7 @@
   "description": "## Problem Scenario",
   "main": "notification.js",
   "scripts": {
-    "repl": "npx ts-node repl.ts"
+    "repl": "npx ts-node src/repl.ts"
   },
   "keywords": [],
   "author": "",

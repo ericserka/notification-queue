@@ -10,12 +10,14 @@ A single notification can be requested, as well as there can be requests to send
 
 ## Example of use
 
+To install dependencies: `npm install`
+
 To use interactively: `npm run repl`
 
 ```javascript
 const notificationQueue = new NotificationQueue({
   maxConcurrent: 5,
-  webhookTimeoutMs: 3600000
+  webhookTimeoutMs: 10000
 });
 
 const singleNotification = new Notification("user1", "important message", true)
