@@ -1,0 +1,16 @@
+{
+  "name": "notification-queue",
+  "version": "1.0.0",
+  "description": "## Problem Scenario",
+  "main": "notification.js",
+  "scripts": {
+    "repl": "npx ts-node repl.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.9.1",
+    "typescript": "^5.6.3"
+  }
+}

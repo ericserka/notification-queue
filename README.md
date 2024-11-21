@@ -10,7 +10,7 @@ A single notification can be requested, as well as there can be requests to send
 
 ## Example of use
 
-To use interactively: `node -i -e "$(cat repl.js)"`
+To use interactively: `npm run repl`
 
 ```javascript
 const notificationQueue = new NotificationQueue({
@@ -18,22 +18,11 @@ const notificationQueue = new NotificationQueue({
   webhookTimeoutMs: 3600000
 });
 
-const singleNotification = {userId: "user1", message: "important message", important: true}
+const singleNotification = new Notification("user1", "important message", true)
 
 await notificationQueue.addNotification(singleNotification);
 
-const bulkNotifications = [
-  {
-    userId: "user2",
-    message: "some message",
-    important: false
-  },
-  {
-    userId: "user3",
-    message: "another important message",
-    important: true
-  }
-];
+const bulkNotifications = [new Notification("user2", "some message", false), new Notification("user3", "another important message", true)];
 
 await notificationQueue.addBulkNotifications(bulkNotifications);
 ```

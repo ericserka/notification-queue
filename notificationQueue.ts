@@ -1,8 +1,25 @@
-const Notification = require('./notification.js')
-const PriorityQueue = require('./priorityQueue.js')
+import { Notification } from './notification'
+import { PriorityQueue } from './priorityQueue'
 
-class NotificationQueue {
-  constructor(options = {}) {
+interface PendingWebhook {
+  timeoutId: NodeJS.Timeout,
+  notification: Notification
+}
+
+interface Options {
+  maxConcurrent?: number,
+  webhookTimeoutMs?: number
+}
+
+export class NotificationQueue {
+  queue: PriorityQueue<Notification>
+  processing: boolean
+  maxConcurrent: number
+  currentProcessing: number
+  webhookTimeoutMs: number
+  pendingWebhooks: Map<string, PendingWebhook>
+
+  constructor(options: Options = {}) {
     this.queue = new PriorityQueue();
     this.processing = false;
     this.maxConcurrent = options.maxConcurrent || 5;
@@ -11,33 +28,24 @@ class NotificationQueue {
     this.pendingWebhooks = new Map();
   }
 
-  async addNotification({ userId, message, important }) {
-    const notification = new Notification(userId, message, important);
-    this.queue.enqueueWithPriority(notification);
+  async addNotification(notification: Notification) {
+    this.queue.enqueue(notification, (item) => item.important);
     console.log(`Notification ${notification.id} added to queue with priority: ${notification.important}`);
     this.processQueue();
-    return notification;
   }
 
-  async addBulkNotifications(notifications) {
+  async addBulkNotifications(notifications: Notification[]) {
     console.log(`Adding ${notifications.length} notifications to queue`);
-
-    const createdNotifications = notifications.map(({ userId, message, important }) =>
-      new Notification(userId, message, important)
-    );
-
-    this.queue.bulkEnqueue(createdNotifications);
+    this.queue.bulkEnqueue(notifications, (item) => item.important);
     this.processQueue();
-
-    return createdNotifications;
   }
 
-  async processQueue() {
+  private async processQueue() {
     if (this.processing) return;
     this.processing = true;
 
     while (!this.queue.isEmpty() && this.currentProcessing < this.maxConcurrent) {
-      const notification = this.queue.dequeue();
+      const notification = this.queue.dequeue() as Notification;
       this.currentProcessing++;
       this.processNotification(notification);
     }
@@ -45,7 +53,7 @@ class NotificationQueue {
     this.processing = false;
   }
 
-  async processNotification(notification) {
+  private async processNotification(notification: Notification) {
     try {
       console.log(`Processing notification ${notification.id} (Important: ${notification.important})`);
       await this.sendWhatsApp(notification);
@@ -60,7 +68,7 @@ class NotificationQueue {
     }
   }
 
-  setupWebhookTimeout(notification) {
+  private setupWebhookTimeout(notification: Notification) {
     const timeoutId = setTimeout(async () => {
       if (!this.pendingWebhooks.has(notification.id)) return;
 
@@ -76,7 +84,7 @@ class NotificationQueue {
     });
   }
 
-  async handleWebhook(notificationId, success) {
+  async handleWebhook(notificationId: string, success: boolean) {
     const pending = this.pendingWebhooks.get(notificationId);
     if (!pending) return;
 
@@ -90,7 +98,7 @@ class NotificationQueue {
     }
   }
 
-  async handleFailure(notification) {
+  private async handleFailure(notification: Notification) {
     if (notification.retries >= 1) {
       console.log(`Max retries reached for notification ${notification.id}`);
       return;
@@ -100,25 +108,11 @@ class NotificationQueue {
     await this.sendSMS(notification);
   }
 
-  async sendWhatsApp(notification) {
+  private async sendWhatsApp(notification: Notification) {
     console.log(`Sending WhatsApp message to user ${notification.userId} (Important: ${notification.important})`);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log(`WhatsApp message sent to user ${notification.userId}`);
-        resolve();
-      }, 1000);
-    });
   }
 
-  async sendSMS(notification) {
+  private async sendSMS(notification: Notification) {
     console.log(`Sending SMS to user ${notification.userId} (Important: ${notification.important})`);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log(`SMS sent to user ${notification.userId}`);
-        resolve();
-      }, 1000);
-    });
   }
 }
-
-module.exports = NotificationQueue
